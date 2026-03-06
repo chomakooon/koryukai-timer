@@ -4,7 +4,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 
 export default function App() {
-  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://forms.gle/example';
+  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/forms/d/e/1FAIpQLScaI2cxf_R1Aio_tTPMNkm7FiyhNHg1Y6Jz-O9hxeZtVdddNg/viewform';
 
   const handleSurveyClick = () => {
     window.open(surveyUrl, '_blank', 'noopener,noreferrer');
