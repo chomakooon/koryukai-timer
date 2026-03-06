@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 
-type Variant = 'default' | 'outline' | 'destructive';
+type Variant = 'default' | 'outline' | 'destructive' | 'black';
 type Size = 'default' | 'sm' | 'lg';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,9 +10,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantClasses: Record<Variant, string> = {
-  default: 'bg-primary text-primary-foreground hover:opacity-95',
-  outline: 'border border-border bg-white text-foreground hover:bg-muted',
-  destructive: 'bg-destructive text-destructive-foreground hover:opacity-95'
+  default: 'border-4 border-black bg-primary text-black hover:bg-primary/90 active-brutal shadow-brutal-sm font-bold',
+  outline: 'border-4 border-black bg-white text-black hover:bg-gray-100 active-brutal shadow-brutal-sm font-bold',
+  destructive: 'border-4 border-black bg-destructive text-white hover:bg-destructive/90 active-brutal shadow-brutal-sm font-bold',
+  black: 'border-4 border-black bg-black text-white hover:bg-gray-900 focus:bg-gray-900 active-brutal shadow-brutal-sm font-bold'
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -28,7 +29,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition disabled:cursor-not-allowed disabled:opacity-50',
+          'inline-flex items-center justify-center gap-2 rounded-none font-bold uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0',
           variantClasses[variant],
           sizeClasses[size],
           className

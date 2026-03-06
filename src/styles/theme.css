@@ -2,30 +2,29 @@
 
 :root {
   --font-size: 16px;
-  --background: #f0f9f4;
-  --foreground: #1a4d2e;
+  --background: #ffffff;
+  --foreground: #000000;
   --card: #ffffff;
-  --card-foreground: #1a4d2e;
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #006837;
-  --primary-foreground: #ffffff;
-  --secondary: #7cb342;
-  --secondary-foreground: #ffffff;
-  --muted: #e8f5e9;
-  --muted-foreground: #4a7c59;
-  --accent: #8bc34a;
-  --accent-foreground: #1a4d2e;
-  --destructive: #d4183d;
+  --card-foreground: #000000;
+  --popover: #ffffff;
+  --popover-foreground: #000000;
+  --primary: #d4ff00;
+  /* ネオンイエロー */
+  --primary-foreground: #000000;
+  --secondary: #e4e4e7;
+  --secondary-foreground: #000000;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+  --accent: #d4ff00;
+  --accent-foreground: #000000;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: rgba(0, 104, 55, 0.15);
+  --border: #000000;
+  /* ソリッドな黒ボーダー */
   --input: transparent;
-  --input-background: #f1f8e9;
-  --switch-background: #a5d6a7;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --ring: #7cb342;
-  --radius: 1rem;
+  --ring: #000000;
+  --radius: 0px;
+  /* シャープなエッジ */
 }
 
 .dark {
