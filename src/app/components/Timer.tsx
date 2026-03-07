@@ -39,7 +39,10 @@ import {
   VolumeX,
   Music,
   BellRing,
-  RadioReceiver
+  RadioReceiver,
+  PartyPopper,
+  AlertTriangle,
+  PawPrint
 } from 'lucide-react';
 
 interface TimerState {
@@ -343,7 +346,7 @@ export function Timer() {
             <div className="text-[32px] tracking-[0.2em] font-black drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]">{renderColoredLabel(currentStep)}</div>
             <div className="text-[7rem] font-black leading-[0.85] tabular-nums tracking-[0.05em] drop-shadow-[4px_4px_0px_rgba(255,255,255,0.7)] md:text-[11rem]">{formatTime(state.remainingSec)}</div>
             {nextStep && <div className="text-[22px] font-black tracking-wider flex items-center justify-center gap-4 drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]"><span className="text-base tracking-[0.1em] bg-white border-2 border-black px-3 py-1 text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">NEXT</span> {renderColoredLabel(nextStep)}</div>}
-            {isComplete && <div className="absolute inset-0 bg-[#486756]/90 flex items-center justify-center z-20"><div className="animate-bounce text-6xl font-black tracking-widest text-black drop-shadow-[4px_4px_0px_rgba(255,255,255,0.7)]">🎉 完了！</div></div>}
+            {isComplete && <div className="absolute inset-0 bg-[#486756]/90 flex items-center justify-center z-20"><div className="animate-bounce flex items-center text-6xl font-black tracking-widest text-black drop-shadow-[4px_4px_0px_rgba(255,255,255,0.7)]"><PartyPopper className="w-16 h-16 mr-4" /> 完了！</div></div>}
           </div>
         ) : (
           <div className="text-center text-3xl font-black tracking-wider text-black/50">ステップがありません</div>
@@ -533,7 +536,7 @@ export function Timer() {
       {!wakeLockManagerRef.current.isWakeLockSupported() && (
         <Card className="border-none bg-[#fff8e1] p-5 shadow-sm">
           <div className="flex items-start gap-3">
-            <span className="text-xl leading-none">⚠️</span>
+            <AlertTriangle className="h-8 w-8 shrink-0 text-[#856404]" />
             <p className="pt-0.5 text-sm font-medium text-[#856404]">このブラウザはスリープ防止機能に対応していません。画面がオフにならないよう端末側で設定してください。</p>
           </div>
         </Card>
@@ -546,7 +549,7 @@ export function Timer() {
             <AlertDialogTitle className="text-center text-2xl">おつかれさまでした！</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2 text-center text-base">
               <div>TLはスレッド作成をお願いいたします。</div>
-              <div>最後まで交流会をお楽しみください🐾</div>
+              <div className="flex items-center justify-center">最後まで交流会をお楽しみください<PawPrint className="w-5 h-5 ml-2" /></div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
