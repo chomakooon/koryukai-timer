@@ -15,6 +15,16 @@ export class AudioManager {
       if (this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
       }
+
+      // iOS Safari等のためのAudioContextアンロック処理（無音を再生）
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      gain.gain.value = 0; // 無音
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start();
+      osc.stop(this.audioContext.currentTime + 0.01);
+
       this.isEnabled = true;
       return true;
     } catch (error) {
