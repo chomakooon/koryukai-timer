@@ -1,8 +1,8 @@
 import * as React from 'react';
 import { cn } from '../../lib/utils';
 
-type Variant = 'default' | 'outline' | 'destructive' | 'black';
-type Size = 'default' | 'sm' | 'lg';
+type Variant = 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'accent';
+type Size = 'default' | 'sm' | 'lg' | 'icon';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;
@@ -10,16 +10,19 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 }
 
 const variantClasses: Record<Variant, string> = {
-  default: 'border-4 border-black bg-primary text-black hover:bg-primary/90 active-brutal shadow-brutal-sm font-bold',
-  outline: 'border-4 border-black bg-white text-black hover:bg-gray-100 active-brutal shadow-brutal-sm font-bold',
-  destructive: 'border-4 border-black bg-destructive text-white hover:bg-destructive/90 active-brutal shadow-brutal-sm font-bold',
-  black: 'border-4 border-black bg-black text-white hover:bg-gray-900 focus:bg-gray-900 active-brutal shadow-brutal-sm font-bold'
+  default: 'bg-[#486756] text-white',
+  secondary: 'bg-[#547A6A] text-white',
+  outline: 'bg-white text-black hover:bg-slate-100',
+  ghost: 'bg-transparent text-black hover:bg-white border-transparent shadow-none hover:border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]',
+  destructive: 'bg-[#ef4444] text-white',
+  accent: 'bg-[#486756] text-white'
 };
 
 const sizeClasses: Record<Size, string> = {
-  default: 'h-10 px-4 py-2',
-  sm: 'h-8 px-3 text-sm',
-  lg: 'h-12 px-6 text-base'
+  default: 'h-12 px-6 py-2',
+  sm: 'h-10 px-4 text-sm',
+  lg: 'h-16 px-8 text-lg',
+  icon: 'h-12 w-12'
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -29,7 +32,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-none font-bold uppercase transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:active:translate-x-0 disabled:active:translate-y-0',
+          'inline-flex items-center justify-center gap-2 rounded-none border-4 border-black font-black uppercase transition-all duration-75 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none disabled:pointer-events-none disabled:opacity-50',
           variantClasses[variant],
           sizeClasses[size],
           className

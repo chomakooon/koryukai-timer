@@ -3,28 +3,29 @@
 :root {
   --font-size: 16px;
   --background: #ffffff;
-  --foreground: #000000;
+  --foreground: #333333;
   --card: #ffffff;
-  --card-foreground: #000000;
+  --card-foreground: #333333;
   --popover: #ffffff;
-  --popover-foreground: #000000;
-  --primary: #d4ff00;
-  /* ネオンイエロー */
-  --primary-foreground: #000000;
-  --secondary: #e4e4e7;
-  --secondary-foreground: #000000;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #d4ff00;
-  --accent-foreground: #000000;
+  --popover-foreground: #333333;
+  --primary: #486756;
+  --primary-foreground: #ffffff;
+  --secondary: #547A6A;
+  --secondary-foreground: #ffffff;
+  --muted: #f1f5f3;
+  --muted-foreground: #64748b;
+  --accent: #cd8b76;
+  --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #000000;
-  /* ソリッドな黒ボーダー */
-  --input: transparent;
-  --ring: #000000;
-  --radius: 0px;
-  /* シャープなエッジ */
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --input-background: #ffffff;
+  --switch-background: #cbd5e1;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #006837;
+  --radius: 1rem;
 }
 
 .dark {
