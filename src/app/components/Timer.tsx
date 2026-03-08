@@ -42,7 +42,8 @@ import {
   RadioReceiver,
   PartyPopper,
   AlertTriangle,
-  PawPrint
+  PawPrint,
+  User
 } from 'lucide-react';
 
 interface TimerState {
@@ -321,7 +322,10 @@ export function Timer() {
       <Card className="border-none p-6 shadow-sm">
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b-4 border-black">
-            <h3 className="text-xl font-black text-black">テーブル人数</h3>
+            <h3 className="text-xl font-black text-black flex items-center gap-2">
+              テーブル人数を設定してください
+              <User className="h-6 w-6 font-black" />
+            </h3>
             <span className="flex h-10 items-center justify-center border-2 border-black bg-white px-4 text-base font-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">{state.participantCount}人</span>
           </div>
           <div className="grid grid-cols-4 gap-4">
@@ -335,6 +339,11 @@ export function Timer() {
                 {count}人
               </Button>
             ))}
+          </div>
+          <div className="mt-4 flex justify-center">
+            <div className="inline-block text-center font-black text-lg text-black bg-white border-2 border-black p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+              A［テーブルリーダー］・{['B', 'C', 'D', 'E', 'F'].slice(0, state.participantCount - 1).join(' ')}
+            </div>
           </div>
         </div>
       </Card>
