@@ -396,7 +396,7 @@ export function Timer() {
           className={`col-span-2 h-16 text-xl tracking-wider ${isResetting ? 'translate-x-[4px] translate-y-[4px] shadow-none' : ''}`}
         >
           <RotateCcw className="mr-2 h-6 w-6" />
-          RESET (HOLD)
+          RESET（長押し）
         </Button>
       </div>
 
