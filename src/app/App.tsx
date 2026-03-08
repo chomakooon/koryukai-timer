@@ -20,7 +20,10 @@ export default function App() {
           <h1 className="text-4xl font-black tracking-[0.2em] text-[#486756] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] md:text-5xl">進行アシスタント</h1>
         </header>
 
-        {/* 1. 交流会情報 */}
+        {/* 1. タイマー */}
+        <Timer />
+
+        {/* 2. 交流会情報 */}
         <Card className="p-8">
           <h2 className="mb-6 flex items-center border-b-4 border-black pb-4 text-2xl font-black uppercase text-black">
             <ClipboardList className="mr-3 h-8 w-8" />
@@ -37,10 +40,7 @@ export default function App() {
           </div>
         </Card>
 
-        {/* 2. タイマー */}
-        <Timer />
-
-        {/* 2. アンケート誘導 */}
+        {/* 3. アンケート誘導 */}
         <Card className="p-8 text-center space-y-6">
           <h2 className="text-2xl flex items-center justify-center font-black text-black">
             <PenLine className="mr-3 h-8 w-8" />
