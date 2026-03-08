@@ -15,7 +15,7 @@ export default function App() {
       <div className="mx-auto max-w-3xl space-y-12">
         <header className="space-y-4 text-center">
           <div className="mx-auto h-28 w-28 overflow-hidden rounded-none border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
-            <img src="/logo-dog.png" alt="アシスタントキャラクター" className="h-[90%] w-[90%] object-contain" />
+            <img src="/logo-dog.jpg" alt="アシスタントキャラクター" className="h-[90%] w-[90%] object-contain" />
           </div>
           <h1 className="text-4xl font-black tracking-[0.2em] text-[#486756] drop-shadow-[2px_2px_0px_rgba(0,0,0,1)] md:text-5xl">進行アシスタント</h1>
         </header>
@@ -68,8 +68,10 @@ export default function App() {
         </Card>
 
         {/* 3. 猫キャラクター */}
-        <div className="flex justify-center pt-4">
-          <img src="/logo-cat.png" alt="アシスタントキャラクター 猫" className="h-32 w-32 object-contain drop-shadow-[4px_4px_0px_rgba(0,0,0,1)]" />
+        <div className="flex justify-center pt-8">
+          <div className="h-28 w-28 overflow-hidden rounded-none border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
+            <img src="/logo-cat.png" alt="アシスタントキャラクター 猫" className="h-[90%] w-[90%] object-contain" />
+          </div>
         </div>
       </div>
       <footer className="pb-8 pt-4 text-center text-base font-bold text-black border-t-4 border-black">
