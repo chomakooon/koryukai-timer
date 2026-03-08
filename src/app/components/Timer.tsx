@@ -299,7 +299,7 @@ export function Timer() {
     if (step.type === 'talk') {
       return (
         <span className="inline-flex items-center gap-2">
-          <span className="flex h-10 w-12 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
+          <span className="flex h-10 w-12 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5 pl-[4px] tracking-normal" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
           <span className="font-black inherit-text">発表</span>
         </span>
       );
@@ -308,9 +308,9 @@ export function Timer() {
     const questionerColor = getParticipantColor(step.questioner!);
     return (
       <span className="inline-flex items-center gap-2">
-        <span className="flex h-10 w-10 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5 pl-[4px] tracking-normal" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
         <span className="font-black mx-1 inherit-text">×</span>
-        <span className="flex h-10 w-10 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5" style={{ backgroundColor: questionerColor }}>{step.questioner}</span>
+        <span className="flex h-10 w-10 items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] pb-0.5 pl-[4px] tracking-normal" style={{ backgroundColor: questionerColor }}>{step.questioner}</span>
         <span className="font-black ml-1 inherit-text">質問</span>
       </span>
     );
