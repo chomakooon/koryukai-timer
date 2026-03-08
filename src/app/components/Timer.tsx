@@ -298,7 +298,7 @@ export function Timer() {
     if (step.type === 'talk') {
       return (
         <span className="inline-flex items-center gap-2">
-          <span className="flex h-10 min-w-[3rem] items-center justify-center rounded-none border-2 border-black text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
+          <span className="flex h-10 min-w-[3rem] items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
           <span className="font-black inherit-text">発表</span>
         </span>
       );
@@ -307,9 +307,9 @@ export function Timer() {
     const questionerColor = getParticipantColor(step.questioner!);
     return (
       <span className="inline-flex items-center gap-2">
-        <span className="flex h-10 min-w-[2.5rem] items-center justify-center rounded-none border-2 border-black text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
+        <span className="flex h-10 min-w-[2.5rem] items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" style={{ backgroundColor: speakerColor }}>{step.speaker}</span>
         <span className="font-black mx-1 inherit-text">×</span>
-        <span className="flex h-10 min-w-[2.5rem] items-center justify-center rounded-none border-2 border-black text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-white" style={{ backgroundColor: questionerColor }}>{step.questioner}</span>
+        <span className="flex h-10 min-w-[2.5rem] items-center justify-center rounded-none border-2 border-black text-white font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]" style={{ backgroundColor: questionerColor }}>{step.questioner}</span>
         <span className="font-black ml-1 inherit-text">質問</span>
       </span>
     );
@@ -345,7 +345,7 @@ export function Timer() {
           <div className="space-y-8 text-center relative z-10 [&_.inherit-text]:text-black">
             <div className="text-[32px] tracking-[0.2em] font-black drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]">{renderColoredLabel(currentStep)}</div>
             <div className="text-[7rem] font-black leading-[0.85] tabular-nums tracking-[0.05em] drop-shadow-[4px_4px_0px_rgba(255,255,255,0.7)] md:text-[11rem]">{formatTime(state.remainingSec)}</div>
-            {nextStep && <div className="text-[22px] font-black tracking-wider flex items-center justify-center gap-4 drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]"><span className="text-base tracking-[0.1em] bg-white border-2 border-black px-3 py-1 text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">NEXT</span> {renderColoredLabel(nextStep)}</div>}
+            {nextStep && <div className="text-[22px] font-black tracking-wider flex items-center justify-center gap-4 drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]"><span className="text-base tracking-[0.1em] bg-white border-2 border-black px-3 py-1 text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">NEXT</span> <div className="flex items-center gap-2">{renderColoredLabel(nextStep)} <span className="text-xl">（{Math.floor(nextStep.durationSec / 60)}分{nextStep.durationSec % 60 > 0 ? `${nextStep.durationSec % 60}秒` : ''}）</span></div></div>}
             {isComplete && <div className="absolute inset-0 bg-[#486756]/90 flex items-center justify-center z-20"><div className="animate-bounce flex items-center text-6xl font-black tracking-widest text-black drop-shadow-[4px_4px_0px_rgba(255,255,255,0.7)]"><PartyPopper className="w-16 h-16 mr-4" /> 完了！</div></div>}
           </div>
         ) : (
