@@ -399,7 +399,7 @@ export function Timer() {
               <div className="flex h-12 w-12 items-center justify-center border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
                 <Settings className="h-6 w-6" />
               </div>
-              <span className="font-black text-xl">時間設定</span>
+              <span className="font-black text-xl">時間・サウンド設定</span>
             </div>
             <ChevronDown className={`h-6 w-6 transition-transform ${showSettings ? 'rotate-180' : ''}`} />
           </CollapsibleTrigger>
