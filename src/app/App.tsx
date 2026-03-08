@@ -35,7 +35,7 @@ export default function App() {
             <p><span className="inline-block border-2 border-black px-2 py-1 mr-2 bg-white">質問順</span> A優先 → その他メンバー（C → D → …）</p>
             <div className="mt-8 flex items-start gap-4 border-4 border-black bg-[#486756] p-5 text-base text-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <AlertTriangle className="h-8 w-8 shrink-0" />
-              <p className="pt-0.5 font-bold">タイマー開始前に必ず「開始」ボタンを押して、音声・スリープ防止を有効化してください。</p>
+              <p className="pt-0.5 font-bold">タイマー開始前に必ずマナーモードを解除してください。</p>
             </div>
           </div>
         </Card>
