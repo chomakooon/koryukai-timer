@@ -168,30 +168,41 @@ export class AudioManager {
         osc.start(now);
         osc.stop(now + 0.6);
       } else if (this.soundType === 'dog') {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.4, now + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.15);
+        // Double bark: "Woof-Woof"
+        for (let j = 0; j < 2; j++) {
+          const startTime = now + j * 0.25;
 
-        const noise = ctx.createOscillator(); // Filtered noise approximation
-        const noiseGain = ctx.createGain();
-        noise.type = 'sawtooth';
-        noise.frequency.setValueAtTime(100, now);
-        noise.connect(noiseGain);
-        noiseGain.connect(ctx.destination);
-        noiseGain.gain.setValueAtTime(0, now);
-        noiseGain.gain.linearRampToValueAtTime(0.1, now + 0.05);
-        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
-        noise.start(now);
-        noise.stop(now + 0.15);
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.frequency.setValueAtTime(300, startTime);
+          osc.frequency.exponentialRampToValueAtTime(150, startTime + 0.12);
+
+          gain.gain.setValueAtTime(0, startTime);
+          gain.gain.linearRampToValueAtTime(0.5, startTime + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.18);
+
+          osc.start(startTime);
+          osc.stop(startTime + 0.2);
+
+          // Add a bit of noise for the "roughness" of the bark
+          const noise = ctx.createOscillator();
+          const noiseGain = ctx.createGain();
+          noise.type = 'sawtooth';
+          noise.frequency.setValueAtTime(150, startTime);
+          noise.connect(noiseGain);
+          noiseGain.connect(ctx.destination);
+
+          noiseGain.gain.setValueAtTime(0, startTime);
+          noiseGain.gain.linearRampToValueAtTime(0.15, startTime + 0.04);
+          noiseGain.gain.exponentialRampToValueAtTime(0.01, startTime + 0.15);
+
+          noise.start(startTime);
+          noise.stop(startTime + 0.2);
+        }
       }
     } catch (e) {
       console.error('音声再生エラー:', e);
