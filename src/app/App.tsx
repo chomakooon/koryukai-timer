@@ -67,8 +67,18 @@ export default function App() {
           </Button>
         </Card>
 
+        {/* 3. プロモーションメッセージ */}
+        <div className="text-center space-y-2 py-4">
+          <p className="text-lg font-black text-black">
+            このタイマーは、よろしければご自由にお使いください。
+          </p>
+          <p className="text-base font-bold text-black opacity-80">
+            ※自支部用にオリジナルデザインで利用したい場合はお気軽にご相談ください！
+          </p>
+        </div>
+
         {/* 3. 猫キャラクター */}
-        <div className="flex justify-center pt-8">
+        <div className="flex justify-center pt-4">
           <div className="h-28 w-28 overflow-hidden rounded-none border-4 border-black bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
             <img src="/logo-cat.png" alt="アシスタントキャラクター 猫" className="h-[90%] w-[90%] object-contain" />
           </div>

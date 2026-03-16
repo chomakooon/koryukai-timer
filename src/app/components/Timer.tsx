@@ -518,15 +518,7 @@ export function Timer() {
               </div>
 
               {soundEnabled && (
-                <div className="grid grid-cols-4 gap-3 mt-4">
-                  <Button type="button" variant={soundType === 'chime' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('chime')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'chime' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
-                    <Music className="h-5 w-5" />
-                    チャイム
-                  </Button>
-                  <Button type="button" variant={soundType === 'bell' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('bell')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'bell' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
-                    <BellRing className="h-5 w-5" />
-                    ベル
-                  </Button>
+                <div className="grid grid-cols-3 gap-3 mt-4">
                   <Button type="button" variant={soundType === 'beep' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('beep')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'beep' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <RadioReceiver className="h-5 w-5" />
                     ビープ
@@ -534,6 +526,10 @@ export function Timer() {
                   <Button type="button" variant={soundType === 'ringtone' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('ringtone')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'ringtone' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <Music className="h-5 w-5" />
                     メロディ
+                  </Button>
+                  <Button type="button" variant={soundType === 'bell' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('bell')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'bell' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                    <BellRing className="h-5 w-5" />
+                    ベル
                   </Button>
                   <Button type="button" variant={soundType === 'emergency' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('emergency')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'emergency' ? 'bg-[#dc2626] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <AlertTriangle className="h-5 w-5" />
