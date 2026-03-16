@@ -53,6 +53,7 @@ interface TimerState {
   currentStepIndex: number;
   remainingSec: number;
   isRunning: boolean;
+  endTime: number | null; // Added field for timestamp-based calculation
   talkSec: number;
   pairSec: number;
 }
@@ -90,24 +91,30 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
       if (state.remainingSec <= 0) {
         const nextIndex = state.currentStepIndex + 1;
         if (nextIndex < state.steps.length) {
+          const duration = state.steps[nextIndex].durationSec;
           return {
             ...state,
             currentStepIndex: nextIndex,
-            remainingSec: state.steps[nextIndex].durationSec,
+            remainingSec: duration,
+            endTime: Date.now() + duration * 1000,
             isRunning: true
           };
         }
         return state;
       }
-      return { ...state, isRunning: true };
+      return {
+        ...state,
+        isRunning: true,
+        endTime: Date.now() + state.remainingSec * 1000
+      };
     }
     case 'PAUSE':
-      return { ...state, isRunning: false };
+      return { ...state, isRunning: false, endTime: null };
     case 'TICK': {
-      if (!state.isRunning || state.remainingSec <= 0) return state;
-      const newRemaining = state.remainingSec - 1;
+      if (!state.isRunning || !state.endTime) return state;
+      const newRemaining = Math.max(0, Math.ceil((state.endTime - Date.now()) / 1000));
       if (newRemaining <= 0) {
-        return { ...state, remainingSec: 0, isRunning: false };
+        return { ...state, remainingSec: 0, isRunning: false, endTime: null };
       }
       return { ...state, remainingSec: newRemaining };
     }
@@ -117,7 +124,8 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
         ...state,
         currentStepIndex: nextIndex,
         remainingSec: state.steps[nextIndex].durationSec,
-        isRunning: false
+        isRunning: false,
+        endTime: null
       };
     }
     case 'PREV_STEP': {
@@ -126,7 +134,8 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
         ...state,
         currentStepIndex: prevIndex,
         remainingSec: state.steps[prevIndex].durationSec,
-        isRunning: false
+        isRunning: false,
+        endTime: null
       };
     }
     case 'JUMP_TO_STEP':
@@ -134,14 +143,16 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
         ...state,
         currentStepIndex: action.index,
         remainingSec: state.steps[action.index].durationSec,
-        isRunning: false
+        isRunning: false,
+        endTime: null
       };
     case 'RESET':
       return {
         ...state,
         currentStepIndex: 0,
         remainingSec: state.steps[0]?.durationSec || 0,
-        isRunning: false
+        isRunning: false,
+        endTime: null
       };
     case 'UPDATE_TIMES': {
       const newSteps = state.steps.map((step, idx) => {
@@ -177,6 +188,7 @@ export function Timer() {
     currentStepIndex: 0,
     remainingSec: PRESETS[4].talkSec,
     isRunning: false,
+    endTime: null,
     talkSec: PRESETS[4].talkSec,
     pairSec: PRESETS[4].pairSec
   });
@@ -207,6 +219,29 @@ export function Timer() {
       dispatch({ type: 'TICK' });
     }, 1000);
     return () => clearInterval(interval);
+  }, [state.isRunning]);
+
+  // Update timer immediately when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && state.isRunning) {
+        dispatch({ type: 'TICK' });
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [state.isRunning]);
+
+  // Keep-alive effect: play silent sound every 25 seconds while running
+  // to prevent mobile browsers from suspending the AudioContext
+  useEffect(() => {
+    if (!state.isRunning) return;
+
+    const keepAliveInterval = window.setInterval(() => {
+      audioManagerRef.current.playSilent();
+    }, 25000);
+
+    return () => clearInterval(keepAliveInterval);
   }, [state.isRunning]);
 
   useEffect(() => {
@@ -250,6 +285,9 @@ export function Timer() {
     if (!audioInitialized) {
       const success = await audioManagerRef.current.initialize();
       setAudioInitialized(success);
+    } else {
+      // 既に初期化されていても、ユーザー操作のタイミングで明示的にResumeさせる
+      audioManagerRef.current.resume();
     }
     dispatch({ type: 'START' });
   }, [audioInitialized]);
@@ -480,7 +518,7 @@ export function Timer() {
               </div>
 
               {soundEnabled && (
-                <div className="grid grid-cols-3 gap-3 mt-4">
+                <div className="grid grid-cols-4 gap-3 mt-4">
                   <Button type="button" variant={soundType === 'chime' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('chime')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'chime' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <Music className="h-5 w-5" />
                     チャイム
@@ -492,6 +530,22 @@ export function Timer() {
                   <Button type="button" variant={soundType === 'beep' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('beep')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'beep' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <RadioReceiver className="h-5 w-5" />
                     ビープ
+                  </Button>
+                  <Button type="button" variant={soundType === 'ringtone' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('ringtone')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'ringtone' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                    <Music className="h-5 w-5" />
+                    メロディ
+                  </Button>
+                  <Button type="button" variant={soundType === 'emergency' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('emergency')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'emergency' ? 'bg-[#dc2626] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                    <AlertTriangle className="h-5 w-5" />
+                    アラート
+                  </Button>
+                  <Button type="button" variant={soundType === 'cat' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('cat')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'cat' ? 'bg-[#7c3aed] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                    <PawPrint className="h-5 w-5" />
+                    ねこ
+                  </Button>
+                  <Button type="button" variant={soundType === 'dog' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('dog')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'dog' ? 'bg-[#ea580c] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                    <PawPrint className="h-5 w-5" />
+                    いぬ
                   </Button>
                 </div>
               )}

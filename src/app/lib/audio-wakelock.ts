@@ -1,4 +1,4 @@
-export type SoundType = 'beep' | 'chime' | 'bell';
+export type SoundType = 'beep' | 'chime' | 'bell' | 'ringtone' | 'emergency' | 'cat' | 'dog';
 
 export class AudioManager {
   private audioContext: AudioContext | null = null;
@@ -11,19 +11,16 @@ export class AudioManager {
 
   async initialize(): Promise<boolean> {
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+
       if (this.audioContext.state === 'suspended') {
         await this.audioContext.resume();
       }
 
       // iOS Safari等のためのAudioContextアンロック処理（無音を再生）
-      const osc = this.audioContext.createOscillator();
-      const gain = this.audioContext.createGain();
-      gain.gain.value = 0; // 無音
-      osc.connect(gain);
-      gain.connect(this.audioContext.destination);
-      osc.start();
-      osc.stop(this.audioContext.currentTime + 0.01);
+      await this.playSilent();
 
       this.isEnabled = true;
       return true;
@@ -33,12 +30,43 @@ export class AudioManager {
     }
   }
 
-  playFinishSound(forcePlay = false): void {
+  async resume(): Promise<void> {
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+      } catch (e) {
+        console.error('AudioContext resume error:', e);
+      }
+    }
+  }
+
+  async playSilent(): Promise<void> {
+    if (!this.audioContext) return;
+    try {
+      const osc = this.audioContext.createOscillator();
+      const gain = this.audioContext.createGain();
+      gain.gain.value = 0; // 無音
+      osc.connect(gain);
+      gain.connect(this.audioContext.destination);
+      osc.start();
+      osc.stop(this.audioContext.currentTime + 0.01);
+    } catch (e) {
+      // noop
+    }
+  }
+
+  async playFinishSound(forcePlay = false): Promise<void> {
     if (!this.audioContext || !this.isEnabled) return;
     if (!this.soundEnabled && !forcePlay) return;
 
     try {
       const ctx = this.audioContext;
+
+      // 再生前に状態を確認し、停止していたら再開を試みる
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
       const now = ctx.currentTime;
 
       if (this.soundType === 'beep') {
@@ -95,6 +123,75 @@ export class AudioManager {
           osc.start(now);
           osc.stop(now + 1.5);
         });
+      } else if (this.soundType === 'ringtone') {
+        const melody = [659.25, 659.25, 0, 659.25, 0, 523.25, 659.25, 0, 783.99]; // E5, E5, E5, C5, E5, G5
+        const timing = [0, 0.15, 0.3, 0.3, 0.45, 0.6, 0.75, 0.9, 1.05];
+        melody.forEach((freq, i) => {
+          if (freq === 0) return;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(freq, now + timing[i]);
+          gain.gain.setValueAtTime(0, now + timing[i]);
+          gain.gain.linearRampToValueAtTime(0.2, now + timing[i] + 0.01);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + timing[i] + 0.14);
+          osc.start(now + timing[i]);
+          osc.stop(now + timing[i] + 0.15);
+        });
+      } else if (this.soundType === 'emergency') {
+        for (let i = 0; i < 4; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(800, now + i * 0.25);
+          osc.frequency.exponentialRampToValueAtTime(400, now + i * 0.25 + 0.2);
+          gain.gain.setValueAtTime(0, now + i * 0.25);
+          gain.gain.linearRampToValueAtTime(0.2, now + i * 0.25 + 0.05);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.25 + 0.24);
+          osc.start(now + i * 0.25);
+          osc.stop(now + i * 0.25 + 0.25);
+        }
+      } else if (this.soundType === 'cat') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.6);
+      } else if (this.soundType === 'dog') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.4, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+
+        const noise = ctx.createOscillator(); // Filtered noise approximation
+        const noiseGain = ctx.createGain();
+        noise.type = 'sawtooth';
+        noise.frequency.setValueAtTime(100, now);
+        noise.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noiseGain.gain.setValueAtTime(0, now);
+        noiseGain.gain.linearRampToValueAtTime(0.1, now + 0.05);
+        noiseGain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+        noise.start(now);
+        noise.stop(now + 0.15);
       }
     } catch (e) {
       console.error('音声再生エラー:', e);
