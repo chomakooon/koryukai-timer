@@ -378,9 +378,12 @@ export function Timer() {
               </Button>
             ))}
           </div>
-          <div className="mt-4 flex justify-center">
-            <div className="inline-block text-center font-black text-lg text-black bg-white border-2 border-black p-3 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
-              A［テーブルリーダー］・{['B', 'C', 'D', 'E', 'F'].slice(0, state.participantCount - 1).join(' ')}
+          <div className="flex justify-center text-center">
+            <div className="text-base font-black px-4 py-3 border-4 border-black inline-block min-w-[300px] bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+              <div className="leading-tight">A［テーブルリーダー］</div>
+              <div className="leading-tight mt-1">
+                ・ {['B', 'C', 'D', 'E', 'F'].slice(0, state.participantCount - 1).join(' ')}
+              </div>
             </div>
           </div>
         </div>
