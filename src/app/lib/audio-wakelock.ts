@@ -31,7 +31,9 @@ export class AudioManager {
   }
 
   async resume(): Promise<void> {
-    if (this.audioContext && this.audioContext.state === 'suspended') {
+    if (!this.audioContext) return;
+    const state = this.audioContext.state as AudioContextState | 'interrupted';
+    if (state === 'suspended' || state === 'interrupted') {
       try {
         await this.audioContext.resume();
       } catch (e) {
@@ -43,6 +45,9 @@ export class AudioManager {
   async playSilent(): Promise<void> {
     if (!this.audioContext) return;
     try {
+      // iOS等でマナーモード解除/着信割り込み後に interrupted/suspended に
+      // 落ちている場合があるので、無音再生前に resume を試みる
+      await this.resume();
       const osc = this.audioContext.createOscillator();
       const gain = this.audioContext.createGain();
       gain.gain.value = 0; // 無音
@@ -62,8 +67,10 @@ export class AudioManager {
     try {
       const ctx = this.audioContext;
 
-      // 再生前に状態を確認し、停止していたら再開を試みる
-      if (ctx.state === 'suspended') {
+      // 再生前に状態を確認し、停止/中断していたら再開を試みる
+      // (iOSはマナーモード切替や着信で 'interrupted' に遷移することがある)
+      const ctxState = ctx.state as AudioContextState | 'interrupted';
+      if (ctxState === 'suspended' || ctxState === 'interrupted') {
         await ctx.resume();
       }
 
@@ -168,8 +175,8 @@ export class AudioManager {
         osc.start(now);
         osc.stop(now + 0.6);
       } else if (this.soundType === 'dog') {
-        // Double bark: "Woof-Woof"
-        for (let j = 0; j < 2; j++) {
+        // Quadruple bark: "Woof-Woof-Woof-Woof"
+        for (let j = 0; j < 4; j++) {
           const startTime = now + j * 0.25;
 
           const osc = ctx.createOscillator();

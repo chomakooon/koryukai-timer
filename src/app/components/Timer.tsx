@@ -224,8 +224,12 @@ export function Timer() {
   // Update timer immediately when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && state.isRunning) {
-        dispatch({ type: 'TICK' });
+      if (document.visibilityState === 'visible') {
+        // 画面復帰時にAudioContextが suspended/interrupted で固まっていることがあるので resume
+        audioManagerRef.current.resume();
+        if (state.isRunning) {
+          dispatch({ type: 'TICK' });
+        }
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -243,6 +247,18 @@ export function Timer() {
 
     return () => clearInterval(keepAliveInterval);
   }, [state.isRunning]);
+
+  // Resume AudioContext on any user interaction.
+  // iOSではマナーモード切替や着信割り込みでAudioContextが
+  // suspended/interrupted に落ちるが、resumeにはユーザージェスチャーが必要。
+  // タイマー稼働中に画面のどこかがタップされたタイミングで再有効化する。
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      audioManagerRef.current.resume();
+    };
+    document.addEventListener('pointerdown', handleUserInteraction, { passive: true });
+    return () => document.removeEventListener('pointerdown', handleUserInteraction);
+  }, []);
 
   useEffect(() => {
     if (previousRemainingRef.current === 1 && state.remainingSec === 0) {
@@ -361,7 +377,7 @@ export function Timer() {
         <div className="space-y-6">
           <div className="flex items-center justify-between pb-4 border-b-4 border-black">
             <h3 className="text-xl font-black text-black flex items-center gap-2">
-              テーブル人数を設定してください
+              マナーモードをOFFにして、テーブル人数を設定してください
               <User className="h-6 w-6 font-black" />
             </h3>
             <span className="flex h-10 items-center justify-center border-2 border-black bg-white px-4 text-base font-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">{state.participantCount}人</span>
@@ -382,7 +398,7 @@ export function Timer() {
             <div className="text-base font-black px-4 py-3 border-4 border-black inline-block min-w-[300px] bg-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
               <div className="leading-tight">A［テーブルリーダー］</div>
               <div className="leading-tight mt-1">
-                ・ {['B', 'C', 'D', 'E', 'F'].slice(0, state.participantCount - 1).join(' ')}
+                × {['B', 'C', 'D', 'E', 'F'].slice(0, state.participantCount - 1).join(' ')}
               </div>
             </div>
           </div>
@@ -482,11 +498,11 @@ export function Timer() {
                 </div>
                 <span className="text-xl font-black">分</span>
                 <div className="flex flex-col items-center gap-1">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setTempTalkSecOnly(Math.min(59, tempTalkSecOnly + 1))} className="h-10 w-16 p-0">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setTempTalkSecOnly(Math.min(50, tempTalkSecOnly + 10))} className="h-10 w-16 p-0">
                     <ChevronUp className="h-6 w-6" />
                   </Button>
-                  <Input id="talk-time-sec" type="number" value={tempTalkSecOnly} onChange={(e) => setTempTalkSecOnly(Math.max(0, Math.min(59, Number(e.target.value))))} min={0} max={59} className="h-14 w-20 rounded-none border-4 border-black text-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => setTempTalkSecOnly(Math.max(0, tempTalkSecOnly - 1))} className="h-10 w-16 p-0">
+                  <Input id="talk-time-sec" type="number" value={tempTalkSecOnly} step={10} onChange={(e) => setTempTalkSecOnly(Math.max(0, Math.min(50, Math.round(Number(e.target.value) / 10) * 10)))} min={0} max={50} className="h-14 w-20 rounded-none border-4 border-black text-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setTempTalkSecOnly(Math.max(0, tempTalkSecOnly - 10))} className="h-10 w-16 p-0">
                     <ChevronDown className="h-6 w-6" />
                   </Button>
                 </div>
@@ -508,11 +524,11 @@ export function Timer() {
                 </div>
                 <span className="text-xl font-black">分</span>
                 <div className="flex flex-col items-center gap-1">
-                  <Button type="button" variant="outline" size="sm" onClick={() => setTempPairSecOnly(Math.min(59, tempPairSecOnly + 1))} className="h-10 w-16 p-0">
+                  <Button type="button" variant="outline" size="sm" onClick={() => setTempPairSecOnly(Math.min(50, tempPairSecOnly + 10))} className="h-10 w-16 p-0">
                     <ChevronUp className="h-6 w-6" />
                   </Button>
-                  <Input id="pair-time-sec" type="number" value={tempPairSecOnly} onChange={(e) => setTempPairSecOnly(Math.max(0, Math.min(59, Number(e.target.value))))} min={0} max={59} className="h-14 w-20 rounded-none border-4 border-black text-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
-                  <Button type="button" variant="outline" size="sm" onClick={() => setTempPairSecOnly(Math.max(0, tempPairSecOnly - 1))} className="h-10 w-16 p-0">
+                  <Input id="pair-time-sec" type="number" value={tempPairSecOnly} step={10} onChange={(e) => setTempPairSecOnly(Math.max(0, Math.min(50, Math.round(Number(e.target.value) / 10) * 10)))} min={0} max={50} className="h-14 w-20 rounded-none border-4 border-black text-center text-xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => setTempPairSecOnly(Math.max(0, tempPairSecOnly - 10))} className="h-10 w-16 p-0">
                     <ChevronDown className="h-6 w-6" />
                   </Button>
                 </div>
@@ -536,21 +552,21 @@ export function Timer() {
 
               {soundEnabled && (
                 <div className="grid grid-cols-3 gap-3 mt-4">
-                  <Button type="button" variant={soundType === 'beep' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('beep')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'beep' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                  <Button type="button" variant={soundType === 'beep' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('beep')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'beep' ? 'bg-[#0891b2] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <RadioReceiver className="h-5 w-5" />
                     ビープ
                   </Button>
-                  <Button type="button" variant={soundType === 'ringtone' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('ringtone')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'ringtone' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                  <Button type="button" variant={soundType === 'ringtone' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('ringtone')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'ringtone' ? 'bg-[#2563eb] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <Music className="h-5 w-5" />
-                    メロディ
+                    ピアノ
                   </Button>
-                  <Button type="button" variant={soundType === 'bell' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('bell')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'bell' ? 'bg-[#486756] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
+                  <Button type="button" variant={soundType === 'bell' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('bell')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'bell' ? 'bg-[#d97706] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <BellRing className="h-5 w-5" />
                     ベル
                   </Button>
                   <Button type="button" variant={soundType === 'emergency' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('emergency')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'emergency' ? 'bg-[#dc2626] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <AlertTriangle className="h-5 w-5" />
-                    アラート
+                    ブザー
                   </Button>
                   <Button type="button" variant={soundType === 'cat' ? 'secondary' : 'outline'} size="sm" onClick={() => handlePlayTest('cat')} className={`flex flex-col items-center gap-1.5 h-16 border-2 border-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${soundType === 'cat' ? 'bg-[#7c3aed] text-white' : 'bg-white text-black hover:bg-slate-100'}`}>
                     <PawPrint className="h-5 w-5" />
@@ -581,7 +597,7 @@ export function Timer() {
         <Card className="p-6">
           <CollapsibleTrigger className="flex w-full items-center justify-between text-black hover:opacity-80 transition-opacity">
             <div className="flex items-center gap-3">
-              <span className="font-black text-xl">工程一覧</span>
+              <span className="font-black text-xl">順番</span>
               <span className="border-2 border-black bg-white px-3 py-1 text-sm font-black text-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">({state.currentStepIndex + 1}/{state.steps.length})</span>
               <span className="text-sm font-black text-black bg-[#edf2ef] px-3 py-1 border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">総時間: {formatDuration(totalDuration)}</span>
             </div>

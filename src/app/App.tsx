@@ -4,7 +4,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 
 export default function App() {
-  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/forms/d/e/1FAIpQLScjwWEg-0u-zP836o9vkVG_CXDlDiyXY1c4VHt8VJ8J263Lvw/viewform';
+  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://forms.gle/WVHvc2eVu4y2CAfK9';
 
   const handleSurveyClick = () => {
     window.open(surveyUrl, '_blank', 'noopener,noreferrer');
@@ -41,30 +41,33 @@ export default function App() {
         </Card>
 
         {/* 3. アンケート誘導 */}
-        <Card className="p-8 text-center space-y-6">
-          <h2 className="text-2xl flex items-center justify-center font-black text-black">
-            <PenLine className="mr-3 h-8 w-8" />
-            参加後アンケート
-          </h2>
+        <Card className="p-8 text-center space-y-8">
           <div className="space-y-6">
-            <p className="text-black font-bold">
-              より良い交流会運営のため、アンケートにご協力をお願いいたします。
-            </p>
             <p className="text-black font-bold text-lg leading-relaxed">
               お疲れ様でした。<br />
               いつもご参加いただきありがとうございます！<br />
-              <span className="inline-flex items-center">これからも当支部をどうぞよろしくお願いいたします<Sparkles className="ml-1 h-5 w-5" /></span>
+              <span className="inline-flex items-center">これからも当支部をどうぞよろしくお願いいたします。<Sparkles className="ml-1 h-5 w-5" /></span>
             </p>
           </div>
-          <Button
-            onClick={handleSurveyClick}
-            size="lg"
-            className="w-full max-w-sm text-xl h-16"
-            variant="outline"
-          >
-            アンケートを開く
-            <ChevronRight className="ml-2 h-6 w-6" />
-          </Button>
+
+          <div className="pt-8 border-t-4 border-black space-y-6">
+            <h2 className="text-2xl flex items-center justify-center font-black text-black">
+              <PenLine className="mr-3 h-8 w-8" />
+              参加後アンケート
+            </h2>
+            <p className="text-black font-bold">
+              より良い交流会運営のため、アンケートにご協力をお願いいたします。
+            </p>
+            <Button
+              onClick={handleSurveyClick}
+              size="lg"
+              className="w-full max-w-sm text-xl h-16"
+              variant="outline"
+            >
+              アンケートを開く
+              <ChevronRight className="ml-2 h-6 w-6" />
+            </Button>
+          </div>
         </Card>
 
         {/* 3. プロモーションメッセージ */}
