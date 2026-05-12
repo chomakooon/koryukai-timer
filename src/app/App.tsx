@@ -4,7 +4,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 
 export default function App() {
-  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/spreadsheets/d/1gljsKVvjrsG31NkWwgCLDMecOWi2QIO-FHhd4tPjwa8/edit?usp=drivesdk';
+  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/forms/d/e/1FAIpQLScjwWEg-0u-zP836o9vkVG_CXDlDiyXY1c4VHt8VJ8J263Lvw/viewform?usp=send_form';
 
   const handleSurveyClick = () => {
     window.open(surveyUrl, '_blank', 'noopener,noreferrer');
