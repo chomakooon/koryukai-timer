@@ -4,7 +4,7 @@ import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 
 export default function App() {
-  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://forms.gle/WVHvc2eVu4y2CAfK9';
+  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/spreadsheets/d/1gljsKVvjrsG31NkWwgCLDMecOWi2QIO-FHhd4tPjwa8/edit?usp=drivesdk';
 
   const handleSurveyClick = () => {
     window.open(surveyUrl, '_blank', 'noopener,noreferrer');
