@@ -163,16 +163,22 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
           durationSec: step.type === 'talk' ? action.talkSec : action.pairSec
         };
       });
+      const newRemaining = action.applyNow
+        ? state.steps[state.currentStepIndex].type === 'talk'
+          ? action.talkSec
+          : action.pairSec
+        : state.remainingSec;
       return {
         ...state,
         steps: newSteps,
         talkSec: action.talkSec,
         pairSec: action.pairSec,
-        remainingSec: action.applyNow
-          ? state.steps[state.currentStepIndex].type === 'talk'
-            ? action.talkSec
-            : action.pairSec
-          : state.remainingSec
+        remainingSec: newRemaining,
+        // 稼働中に現在工程へ適用した場合、終了時刻も引き直さないと
+        // 次のTICKで旧endTime基準の残り時間に巻き戻ってしまう
+        endTime: action.applyNow && state.isRunning
+          ? Date.now() + newRemaining * 1000
+          : state.endTime
       };
     }
     default:
@@ -261,7 +267,11 @@ export function Timer() {
   }, []);
 
   useEffect(() => {
-    if (previousRemainingRef.current === 1 && state.remainingSec === 0) {
+    // 残り秒が0に到達したら必ず鳴らす。
+    // setInterval のドリフトや画面復帰時の TICK で残り秒が「1」を飛ばして
+    // 2→0 のように直接0へ落ちる場合があり（セッション後半ほど発生しやすい）、
+    // === 1 判定だと後半で鳴らなくなっていた。> 0 → 0 で確実に鳴らす。
+    if (previousRemainingRef.current > 0 && state.remainingSec === 0) {
       audioManagerRef.current.playFinishSound();
     }
     previousRemainingRef.current = state.remainingSec;
@@ -415,8 +425,8 @@ export function Timer() {
             {/* 次の工程プレビュー */}
             {nextStep && (
               <div className="text-[22px] font-black tracking-wider flex flex-col items-center justify-center gap-2 drop-shadow-[2px_2px_0px_rgba(255,255,255,0.7)]">
-                <span className="text-base tracking-[0.1em] bg-white border-2 border-black px-3 py-1 text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] uppercase">
-                  Next
+                <span className="text-base tracking-[0.1em] bg-white border-2 border-black px-3 py-1 text-black font-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                  次
                 </span>
                 <div className="flex items-center justify-center gap-2">
                   {renderColoredLabel(nextStep)}
@@ -435,25 +445,25 @@ export function Timer() {
 
       {/* 操作ボタン */}
       <div className="mt-2 grid grid-cols-2 gap-4">
-        <Button size="lg" onClick={state.isRunning ? () => dispatch({ type: 'PAUSE' }) : handleStart} className={`col-span-2 h-24 text-4xl tracking-widest ${state.isRunning ? 'bg-[#486756] hover:bg-[#3a5345] text-white' : 'bg-black hover:bg-neutral-800 text-white'}`}>
+        <Button size="lg" onClick={state.isRunning ? () => dispatch({ type: 'PAUSE' }) : handleStart} className={`col-span-2 h-32 text-6xl tracking-widest ${state.isRunning ? 'bg-[#486756] hover:bg-[#3a5345] text-white' : 'bg-black hover:bg-neutral-800 text-white'}`}>
           {state.isRunning ? (
             <>
-              <Pause className="mr-3 h-10 w-10" />
+              <Pause className="mr-3 h-14 w-14" />
               PAUSE
             </>
           ) : (
             <>
-              <Play className="mr-3 h-10 w-10 text-white" fill="currentColor" />
+              <Play className="mr-3 h-14 w-14 text-white" fill="currentColor" />
               START
             </>
           )}
         </Button>
         <Button size="lg" variant="outline" onClick={() => dispatch({ type: 'PREV_STEP' })} disabled={state.currentStepIndex === 0} className="h-16 text-xl text-black">
           <SkipBack className="mr-2 h-6 w-6" />
-          BACK
+          戻る
         </Button>
         <Button size="lg" variant="outline" onClick={() => dispatch({ type: 'NEXT_STEP' })} disabled={state.currentStepIndex === state.steps.length - 1} className="h-16 text-xl text-black">
-          NEXT
+          次へ
           <SkipForward className="ml-2 h-6 w-6" />
         </Button>
         <Button

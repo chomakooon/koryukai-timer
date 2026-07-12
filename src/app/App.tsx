@@ -1,15 +1,8 @@
-import { ChevronRight, ClipboardList, AlertTriangle, PenLine, Sparkles, Rocket } from 'lucide-react';
+import { ClipboardList, AlertTriangle, Sparkles, Rocket } from 'lucide-react';
 import { Timer } from './components/Timer';
-import { Button } from './components/ui/button';
 import { Card } from './components/ui/card';
 
 export default function App() {
-  const surveyUrl = import.meta.env.VITE_SURVEY_URL || 'https://docs.google.com/forms/d/e/1FAIpQLScjwWEg-0u-zP836o9vkVG_CXDlDiyXY1c4VHt8VJ8J263Lvw/viewform?usp=send_form';
-
-  const handleSurveyClick = () => {
-    window.open(surveyUrl, '_blank', 'noopener,noreferrer');
-  };
-
   return (
     <div className="min-h-screen px-4 py-8 font-black text-black">
       <div className="mx-auto max-w-3xl space-y-12">
@@ -40,7 +33,7 @@ export default function App() {
           </div>
         </Card>
 
-        {/* 3. アンケート誘導 */}
+        {/* 3. お礼メッセージ */}
         <Card className="p-8 text-center space-y-8">
           <div className="space-y-6">
             <p className="text-black font-bold text-lg leading-relaxed">
@@ -48,25 +41,6 @@ export default function App() {
               いつもご参加いただきありがとうございます！<br />
               <span className="inline-flex items-center">これからも当支部をどうぞよろしくお願いいたします。<Sparkles className="ml-1 h-5 w-5" /></span>
             </p>
-          </div>
-
-          <div className="pt-8 border-t-4 border-black space-y-6">
-            <h2 className="text-2xl flex items-center justify-center font-black text-black">
-              <PenLine className="mr-3 h-8 w-8" />
-              参加後アンケート
-            </h2>
-            <p className="text-black font-bold">
-              より良い交流会運営のため、アンケートにご協力をお願いいたします。
-            </p>
-            <Button
-              onClick={handleSurveyClick}
-              size="lg"
-              className="w-full max-w-sm text-xl h-16"
-              variant="outline"
-            >
-              アンケートを開く
-              <ChevronRight className="ml-2 h-6 w-6" />
-            </Button>
           </div>
         </Card>
 
@@ -77,6 +51,18 @@ export default function App() {
           </p>
           <p className="text-base font-bold text-black opacity-80">
             ※自支部用にオリジナルデザインで利用したい場合はお気軽にご相談ください！
+          </p>
+          <p className="text-base font-bold text-black opacity-80">
+            ご相談は
+            <a
+              href="https://m.facebook.com/profile.php?id=100028151854122"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 underline"
+            >
+              岡崎
+            </a>
+            まで
           </p>
         </div>
 

@@ -1,25 +1,106 @@
 export type SoundType = 'beep' | 'chime' | 'bell' | 'ringtone' | 'emergency' | 'cat' | 'dog';
 
+// 無音の1秒WAVを実行時に生成する（外部ファイル不要・完全無音）
+function createSilentWavUrl(): string {
+  const sampleRate = 8000;
+  const numSamples = sampleRate; // 1秒
+  const buf = new ArrayBuffer(44 + numSamples * 2);
+  const v = new DataView(buf);
+  const writeStr = (o: number, s: string) => {
+    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
+  };
+  writeStr(0, 'RIFF');
+  v.setUint32(4, 36 + numSamples * 2, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, 1, true); // mono
+  v.setUint32(24, sampleRate, true);
+  v.setUint32(28, sampleRate * 2, true);
+  v.setUint16(32, 2, true);
+  v.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  v.setUint32(40, numSamples * 2, true);
+  // サンプル部は0のまま = 無音
+  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
+}
+
 export class AudioManager {
   private audioContext: AudioContext | null = null;
   private isEnabled = false;
   private soundEnabled = true;
   private soundType: SoundType = 'chime';
+  private keepAliveEl: HTMLAudioElement | null = null;
 
   setSoundEnabled(enabled: boolean) { this.soundEnabled = enabled; }
   setSoundType(type: SoundType) { this.soundType = type; }
 
+  // ブラウザにcloseされたAudioContextは復活しないので作り直す
+  private ensureContext(): AudioContext | null {
+    if (this.audioContext && this.audioContext.state === 'closed') {
+      this.audioContext = null;
+    }
+    if (!this.audioContext) {
+      try {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch {
+        return null;
+      }
+    }
+    return this.audioContext;
+  }
+
+  // iOSはマナーモード中、Web Audioの音をOSレベルで消す。
+  // 無音のHTMLAudioElementをループ再生しておくとオーディオセッションが
+  // 「メディア再生」扱いになり、マナーモードでもWeb Audioの音が鳴る。
+  // セッションが維持されるため interrupted への遷移も起きにくくなる。
+  private startKeepAliveElement(): void {
+    try {
+      if (!this.keepAliveEl) {
+        const el = new Audio(createSilentWavUrl());
+        el.loop = true;
+        el.preload = 'auto';
+        (el as any).playsInline = true;
+        el.setAttribute('playsinline', '');
+        this.keepAliveEl = el;
+      }
+      if (this.keepAliveEl.paused) {
+        // ユーザージェスチャー外だと拒否されることがあるが、次のタップで再試行される
+        this.keepAliveEl.play().catch(() => {});
+      }
+    } catch {
+      // noop
+    }
+  }
+
+  // iOSでは interrupted 状態の resume() が永久に解決しないことがあるため、
+  // 必ずタイムアウト付きで待つ。タイムアウトしても後続の再生予約は行う
+  // （コンテキスト復帰時に遅れて鳴る方が、無音より良い）。
+  private async resumeWithTimeout(ms: number): Promise<void> {
+    const ctx = this.audioContext;
+    if (!ctx) return;
+    const state = ctx.state as AudioContextState | 'interrupted';
+    if (state === 'suspended' || state === 'interrupted') {
+      await Promise.race([
+        ctx.resume().catch((e) => console.error('AudioContext resume error:', e)),
+        new Promise<void>((resolve) => setTimeout(resolve, ms))
+      ]);
+    }
+  }
+
   async initialize(): Promise<boolean> {
     try {
-      if (!this.audioContext) {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
+      const ctx = this.ensureContext();
+      if (!ctx) return false;
 
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
-      }
+      await this.resumeWithTimeout(1000);
 
-      // iOS Safari等のためのAudioContextアンロック処理（無音を再生）
+      // iOS Safari等のためのAudioContextアンロック処理。
+      // 無音オシレータだと古いiOSで初回の音が抜けることがあるため、
+      // 空のAudioBufferを実際に再生してハードウェアを起こす（定番のアンロック手法）。
+      this.unlock();
+      this.startKeepAliveElement();
       await this.playSilent();
 
       this.isEnabled = true;
@@ -30,16 +111,25 @@ export class AudioManager {
     }
   }
 
+  // 空バッファを1サンプル再生してオーディオ出力をアンロックする（特にiOS初回対策）
+  private unlock(): void {
+    if (!this.audioContext) return;
+    try {
+      const buffer = this.audioContext.createBuffer(1, 1, 22050);
+      const source = this.audioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(this.audioContext.destination);
+      source.start(0);
+    } catch {
+      // noop
+    }
+  }
+
   async resume(): Promise<void> {
     if (!this.audioContext) return;
-    const state = this.audioContext.state as AudioContextState | 'interrupted';
-    if (state === 'suspended' || state === 'interrupted') {
-      try {
-        await this.audioContext.resume();
-      } catch (e) {
-        console.error('AudioContext resume error:', e);
-      }
-    }
+    await this.resumeWithTimeout(500);
+    // 割り込みで止まった無音ループもユーザー操作のタイミングで復帰させる
+    if (this.isEnabled) this.startKeepAliveElement();
   }
 
   async playSilent(): Promise<void> {
@@ -61,18 +151,27 @@ export class AudioManager {
   }
 
   async playFinishSound(forcePlay = false): Promise<void> {
-    if (!this.audioContext || !this.isEnabled) return;
+    if (!this.isEnabled) return;
     if (!this.soundEnabled && !forcePlay) return;
+    // コンテキストがcloseされていたら作り直す
+    const ensured = this.ensureContext();
+    if (!ensured) return;
+
+    // 音が出せない状況でも振動で気付けるようにする（対応端末のみ）
+    try {
+      navigator.vibrate?.([250, 100, 250]);
+    } catch {
+      // noop
+    }
 
     try {
-      const ctx = this.audioContext;
+      const ctx = ensured;
 
       // 再生前に状態を確認し、停止/中断していたら再開を試みる
-      // (iOSはマナーモード切替や着信で 'interrupted' に遷移することがある)
-      const ctxState = ctx.state as AudioContextState | 'interrupted';
-      if (ctxState === 'suspended' || ctxState === 'interrupted') {
-        await ctx.resume();
-      }
+      // (iOSはマナーモード切替や着信で 'interrupted' に遷移することがある)。
+      // resume()がハングしても音の予約自体は行う（復帰時に遅れて鳴る）。
+      await this.resumeWithTimeout(400);
+      if (this.isEnabled) this.startKeepAliveElement();
 
       const now = ctx.currentTime;
 
