@@ -4,7 +4,10 @@ export class AudioManager {
   private audioContext: AudioContext | null = null;
   private isEnabled = false;
   private soundEnabled = true;
-  private soundType: SoundType = 'chime';
+  private soundType: SoundType = 'beep';
+  // 現在鳴動中の音のマスターゲイン。次の鳴動時・タイムアウト時に
+  // 物理的に切断することで、stopの予約が効かない環境でも音が残らない
+  private activeSoundGain: GainNode | null = null;
   // iOSマナーモード対策: Web Audioを ctx.destination に直接出すと
   // マナーモード中はOSに消される。MediaStream経由で<audio>要素に流すと
   // 動画・音楽と同じ「メディア再生」扱いになり、マナーモードでも鳴る。
@@ -164,6 +167,22 @@ export class AudioManager {
       await this.ensureOutput(ctx);
 
       const out = this.outputNode(ctx);
+
+      // 前回の音が万一止まり損ねていても、ここで物理的に切断する
+      // （iOSでオシレータのstop予約が効かず、音が残って工程ごとに
+      // 積み重なり増幅していく現象への対策）
+      if (this.activeSoundGain) {
+        try { this.activeSoundGain.disconnect(); } catch { /* noop */ }
+      }
+      const master = ctx.createGain();
+      master.connect(out);
+      this.activeSoundGain = master;
+      // どの音も1.5秒以内に終わる。3秒後には無条件で切断する保険
+      window.setTimeout(() => {
+        if (this.activeSoundGain === master) this.activeSoundGain = null;
+        try { master.disconnect(); } catch { /* noop */ }
+      }, 3000);
+
       const now = ctx.currentTime;
 
       if (this.soundType === 'beep') {
@@ -172,7 +191,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(out);
+          gain.connect(master);
 
           osc.type = 'square'; // 鋭い波形で目立たせる
           osc.frequency.setValueAtTime(1200, now + i * 0.15); // ちょっと高めの音
@@ -189,7 +208,7 @@ export class AudioManager {
         const osc1 = ctx.createOscillator();
         const gain1 = ctx.createGain();
         osc1.connect(gain1);
-        gain1.connect(out);
+        gain1.connect(master);
         osc1.frequency.setValueAtTime(880, now); // A5
         gain1.gain.setValueAtTime(0, now);
         gain1.gain.linearRampToValueAtTime(0.3, now + 0.01);
@@ -200,7 +219,7 @@ export class AudioManager {
         const osc2 = ctx.createOscillator();
         const gain2 = ctx.createGain();
         osc2.connect(gain2);
-        gain2.connect(out);
+        gain2.connect(master);
         osc2.frequency.setValueAtTime(740, now + 0.4); // F#5
         gain2.gain.setValueAtTime(0, now + 0.4);
         gain2.gain.linearRampToValueAtTime(0.3, now + 0.41);
@@ -212,7 +231,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(out);
+          gain.connect(master);
           osc.frequency.setValueAtTime(freq, now);
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(0.2 / (i + 1), now + 0.01);
@@ -228,7 +247,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(out);
+          gain.connect(master);
           osc.frequency.setValueAtTime(freq, now + timing[i]);
           gain.gain.setValueAtTime(0, now + timing[i]);
           gain.gain.linearRampToValueAtTime(0.2, now + timing[i] + 0.01);
@@ -242,7 +261,7 @@ export class AudioManager {
           const gain = ctx.createGain();
           osc.type = 'sawtooth';
           osc.connect(gain);
-          gain.connect(out);
+          gain.connect(master);
           osc.frequency.setValueAtTime(800, now + i * 0.25);
           osc.frequency.exponentialRampToValueAtTime(400, now + i * 0.25 + 0.2);
           gain.gain.setValueAtTime(0, now + i * 0.25);
@@ -255,7 +274,7 @@ export class AudioManager {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
-        gain.connect(out);
+        gain.connect(master);
         osc.frequency.setValueAtTime(400, now);
         osc.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
         osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
@@ -273,7 +292,7 @@ export class AudioManager {
           const gain = ctx.createGain();
           osc.type = 'triangle';
           osc.connect(gain);
-          gain.connect(out);
+          gain.connect(master);
 
           osc.frequency.setValueAtTime(300, startTime);
           osc.frequency.exponentialRampToValueAtTime(150, startTime + 0.12);
@@ -291,7 +310,7 @@ export class AudioManager {
           noise.type = 'sawtooth';
           noise.frequency.setValueAtTime(150, startTime);
           noise.connect(noiseGain);
-          noiseGain.connect(out);
+          noiseGain.connect(master);
 
           noiseGain.gain.setValueAtTime(0, startTime);
           noiseGain.gain.linearRampToValueAtTime(0.15, startTime + 0.04);

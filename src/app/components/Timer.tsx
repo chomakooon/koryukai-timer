@@ -214,7 +214,7 @@ export function Timer() {
   const resetTimerRef = useRef<number | null>(null);
   const [showCompletionDialog, setShowCompletionDialog] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [soundType, setSoundType] = useState<SoundType>('chime');
+  const [soundType, setSoundType] = useState<SoundType>('beep');
 
   const previousRemainingRef = useRef(state.remainingSec);
   const isComplete = state.currentStepIndex === state.steps.length - 1 && state.remainingSec === 0;
