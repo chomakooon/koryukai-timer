@@ -1,37 +1,15 @@
 export type SoundType = 'beep' | 'chime' | 'bell' | 'ringtone' | 'emergency' | 'cat' | 'dog';
 
-// 無音の1秒WAVを実行時に生成する（外部ファイル不要・完全無音）
-function createSilentWavUrl(): string {
-  const sampleRate = 8000;
-  const numSamples = sampleRate; // 1秒
-  const buf = new ArrayBuffer(44 + numSamples * 2);
-  const v = new DataView(buf);
-  const writeStr = (o: number, s: string) => {
-    for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i));
-  };
-  writeStr(0, 'RIFF');
-  v.setUint32(4, 36 + numSamples * 2, true);
-  writeStr(8, 'WAVE');
-  writeStr(12, 'fmt ');
-  v.setUint32(16, 16, true);
-  v.setUint16(20, 1, true); // PCM
-  v.setUint16(22, 1, true); // mono
-  v.setUint32(24, sampleRate, true);
-  v.setUint32(28, sampleRate * 2, true);
-  v.setUint16(32, 2, true);
-  v.setUint16(34, 16, true);
-  writeStr(36, 'data');
-  v.setUint32(40, numSamples * 2, true);
-  // サンプル部は0のまま = 無音
-  return URL.createObjectURL(new Blob([buf], { type: 'audio/wav' }));
-}
-
 export class AudioManager {
   private audioContext: AudioContext | null = null;
   private isEnabled = false;
   private soundEnabled = true;
   private soundType: SoundType = 'chime';
-  private keepAliveEl: HTMLAudioElement | null = null;
+  // iOSマナーモード対策: Web Audioを ctx.destination に直接出すと
+  // マナーモード中はOSに消される。MediaStream経由で<audio>要素に流すと
+  // 動画・音楽と同じ「メディア再生」扱いになり、マナーモードでも鳴る。
+  private mediaDest: MediaStreamAudioDestinationNode | null = null;
+  private outputEl: HTMLAudioElement | null = null;
 
   setSoundEnabled(enabled: boolean) { this.soundEnabled = enabled; }
   setSoundType(type: SoundType) { this.soundType = type; }
@@ -51,27 +29,46 @@ export class AudioManager {
     return this.audioContext;
   }
 
-  // iOSはマナーモード中、Web Audioの音をOSレベルで消す。
-  // 無音のHTMLAudioElementをループ再生しておくとオーディオセッションが
-  // 「メディア再生」扱いになり、マナーモードでもWeb Audioの音が鳴る。
-  // セッションが維持されるため interrupted への遷移も起きにくくなる。
-  private startKeepAliveElement(): void {
+  // MediaStream出力経路をセットアップし、<audio>要素の再生を保証する。
+  // 再生が止まっていたら再開を試みる（ユーザージェスチャー外だと
+  // 拒否されることがあるが、次のタップ時のresume()で再試行される）。
+  private async ensureOutput(ctx: AudioContext): Promise<void> {
     try {
-      if (!this.keepAliveEl) {
-        const el = new Audio(createSilentWavUrl());
-        el.loop = true;
-        el.preload = 'auto';
-        (el as any).playsInline = true;
-        el.setAttribute('playsinline', '');
-        this.keepAliveEl = el;
+      if (!this.mediaDest || this.mediaDest.context !== ctx) {
+        this.mediaDest = ctx.createMediaStreamDestination();
+        if (!this.outputEl) {
+          const el = new Audio();
+          (el as any).playsInline = true;
+          el.setAttribute('playsinline', '');
+          this.outputEl = el;
+        }
+        this.outputEl.srcObject = this.mediaDest.stream;
       }
-      if (this.keepAliveEl.paused) {
-        // ユーザージェスチャー外だと拒否されることがあるが、次のタップで再試行される
-        this.keepAliveEl.play().catch(() => {});
+      if (this.outputEl && this.outputEl.paused) {
+        // play()が返らない/拒否される環境でも先へ進めるようタイムアウト付き
+        await Promise.race([
+          this.outputEl.play().catch(() => {}),
+          new Promise<void>((resolve) => setTimeout(resolve, 300))
+        ]);
       }
     } catch {
-      // noop
+      // MediaStream非対応環境では直接出力にフォールバックする
+      this.mediaDest = null;
     }
+  }
+
+  // 音の出力先。<audio>経由が生きていればそちら（マナーモードでも鳴る）、
+  // だめなら ctx.destination へ直接（通常の再生）。
+  private outputNode(ctx: AudioContext): AudioNode {
+    if (
+      this.mediaDest &&
+      this.mediaDest.context === ctx &&
+      this.outputEl &&
+      !this.outputEl.paused
+    ) {
+      return this.mediaDest;
+    }
+    return ctx.destination;
   }
 
   // iOSでは interrupted 状態の resume() が永久に解決しないことがあるため、
@@ -100,7 +97,7 @@ export class AudioManager {
       // 無音オシレータだと古いiOSで初回の音が抜けることがあるため、
       // 空のAudioBufferを実際に再生してハードウェアを起こす（定番のアンロック手法）。
       this.unlock();
-      this.startKeepAliveElement();
+      await this.ensureOutput(ctx);
       await this.playSilent();
 
       this.isEnabled = true;
@@ -128,8 +125,8 @@ export class AudioManager {
   async resume(): Promise<void> {
     if (!this.audioContext) return;
     await this.resumeWithTimeout(500);
-    // 割り込みで止まった無音ループもユーザー操作のタイミングで復帰させる
-    if (this.isEnabled) this.startKeepAliveElement();
+    // 割り込みで止まった出力用<audio>もユーザー操作のタイミングで復帰させる
+    if (this.isEnabled) await this.ensureOutput(this.audioContext);
   }
 
   async playSilent(): Promise<void> {
@@ -142,7 +139,7 @@ export class AudioManager {
       const gain = this.audioContext.createGain();
       gain.gain.value = 0; // 無音
       osc.connect(gain);
-      gain.connect(this.audioContext.destination);
+      gain.connect(this.outputNode(this.audioContext));
       osc.start();
       osc.stop(this.audioContext.currentTime + 0.01);
     } catch (e) {
@@ -164,8 +161,9 @@ export class AudioManager {
       // (iOSはマナーモード切替や着信で 'interrupted' に遷移することがある)。
       // resume()がハングしても音の予約自体は行う（復帰時に遅れて鳴る）。
       await this.resumeWithTimeout(400);
-      if (this.isEnabled) this.startKeepAliveElement();
+      await this.ensureOutput(ctx);
 
+      const out = this.outputNode(ctx);
       const now = ctx.currentTime;
 
       if (this.soundType === 'beep') {
@@ -174,7 +172,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(out);
 
           osc.type = 'square'; // 鋭い波形で目立たせる
           osc.frequency.setValueAtTime(1200, now + i * 0.15); // ちょっと高めの音
@@ -191,7 +189,7 @@ export class AudioManager {
         const osc1 = ctx.createOscillator();
         const gain1 = ctx.createGain();
         osc1.connect(gain1);
-        gain1.connect(ctx.destination);
+        gain1.connect(out);
         osc1.frequency.setValueAtTime(880, now); // A5
         gain1.gain.setValueAtTime(0, now);
         gain1.gain.linearRampToValueAtTime(0.3, now + 0.01);
@@ -202,7 +200,7 @@ export class AudioManager {
         const osc2 = ctx.createOscillator();
         const gain2 = ctx.createGain();
         osc2.connect(gain2);
-        gain2.connect(ctx.destination);
+        gain2.connect(out);
         osc2.frequency.setValueAtTime(740, now + 0.4); // F#5
         gain2.gain.setValueAtTime(0, now + 0.4);
         gain2.gain.linearRampToValueAtTime(0.3, now + 0.41);
@@ -214,7 +212,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(out);
           osc.frequency.setValueAtTime(freq, now);
           gain.gain.setValueAtTime(0, now);
           gain.gain.linearRampToValueAtTime(0.2 / (i + 1), now + 0.01);
@@ -230,7 +228,7 @@ export class AudioManager {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(out);
           osc.frequency.setValueAtTime(freq, now + timing[i]);
           gain.gain.setValueAtTime(0, now + timing[i]);
           gain.gain.linearRampToValueAtTime(0.2, now + timing[i] + 0.01);
@@ -244,7 +242,7 @@ export class AudioManager {
           const gain = ctx.createGain();
           osc.type = 'sawtooth';
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(out);
           osc.frequency.setValueAtTime(800, now + i * 0.25);
           osc.frequency.exponentialRampToValueAtTime(400, now + i * 0.25 + 0.2);
           gain.gain.setValueAtTime(0, now + i * 0.25);
@@ -257,7 +255,7 @@ export class AudioManager {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(out);
         osc.frequency.setValueAtTime(400, now);
         osc.frequency.exponentialRampToValueAtTime(1000, now + 0.2);
         osc.frequency.exponentialRampToValueAtTime(800, now + 0.5);
@@ -275,7 +273,7 @@ export class AudioManager {
           const gain = ctx.createGain();
           osc.type = 'triangle';
           osc.connect(gain);
-          gain.connect(ctx.destination);
+          gain.connect(out);
 
           osc.frequency.setValueAtTime(300, startTime);
           osc.frequency.exponentialRampToValueAtTime(150, startTime + 0.12);
@@ -293,7 +291,7 @@ export class AudioManager {
           noise.type = 'sawtooth';
           noise.frequency.setValueAtTime(150, startTime);
           noise.connect(noiseGain);
-          noiseGain.connect(ctx.destination);
+          noiseGain.connect(out);
 
           noiseGain.gain.setValueAtTime(0, startTime);
           noiseGain.gain.linearRampToValueAtTime(0.15, startTime + 0.04);
