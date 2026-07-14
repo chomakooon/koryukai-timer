@@ -157,13 +157,6 @@ export class AudioManager {
     const ensured = this.ensureContext();
     if (!ensured) return;
 
-    // 音が出せない状況でも振動で気付けるようにする（対応端末のみ）
-    try {
-      navigator.vibrate?.([250, 100, 250]);
-    } catch {
-      // noop
-    }
-
     try {
       const ctx = ensured;
 
